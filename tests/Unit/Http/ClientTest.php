@@ -150,7 +150,9 @@ final class ClientTest extends TestCase
             {
             }
 
-            public function log($level, string|\Stringable $message, array $context = []): void
+            // An untyped $message: the one signature valid against psr/log 1.1, 2 and 3 (the SDK allows all three).
+            /** @param string|\Stringable $message */
+            public function log($level, $message, array $context = []): void
             {
                 $this->lines[] = ['level' => $level, 'message' => (string) $message, 'context' => $context];
             }

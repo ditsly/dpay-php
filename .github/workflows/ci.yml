@@ -48,7 +48,12 @@ jobs:
           php-version: ${{ matrix.php }}
           extensions: json, mbstring
           coverage: none
-      - run: composer install --no-interaction --no-progress --prefer-dist ${{ matrix.deps == 'lowest' && '--prefer-lowest' || '' }}
+      - name: Install dependencies (highest)
+        if: matrix.deps == 'highest'
+        run: composer install --no-interaction --no-progress --prefer-dist
+      - name: Install dependencies (lowest allowed by composer.json)
+        if: matrix.deps == 'lowest'
+        run: composer update --no-interaction --no-progress --prefer-dist --prefer-lowest --prefer-stable
       - name: Unit tier
         run: vendor/bin/phpunit --testsuite unit
       - name: Contract tier — replays the execution-generated Postman collection
