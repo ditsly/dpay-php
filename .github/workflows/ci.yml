@@ -1,0 +1,55 @@
+# CI for the published package repository (ditsly/dpay-php, exported from
+# integrations/php-sdk by integrations/tools/export.mjs). Inside the monorepo the same gates run through
+# `composer check` and the Docker matrix script (tools/matrix.sh).
+name: CI
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  pull_request:
+
+jobs:
+  quality:
+    name: validate · audit · cs · phpstan (PHP ${{ matrix.php }})
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        php: ['8.1', '8.5']
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          extensions: json, mbstring
+          coverage: none
+      - run: composer validate --strict
+      - run: composer install --no-interaction --no-progress --prefer-dist
+      - run: composer audit
+      - run: vendor/bin/php-cs-fixer fix --dry-run --diff
+      - run: vendor/bin/phpstan analyse --memory-limit=1G --no-progress
+      - run: vendor/bin/phpstan analyse --memory-limit=1G --no-progress -c phpstan.tests.neon
+
+  tests:
+    name: phpunit (PHP ${{ matrix.php }}, ${{ matrix.deps }} deps)
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        php: ['8.1', '8.2', '8.3', '8.4', '8.5']
+        deps: [highest]
+        include:
+          - php: '8.1'
+            deps: lowest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          extensions: json, mbstring
+          coverage: none
+      - run: composer install --no-interaction --no-progress --prefer-dist ${{ matrix.deps == 'lowest' && '--prefer-lowest' || '' }}
+      - name: Unit tier
+        run: vendor/bin/phpunit --testsuite unit
+      - name: Contract tier — replays the execution-generated Postman collection
+        run: vendor/bin/phpunit --testsuite contract

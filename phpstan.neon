@@ -1,0 +1,12 @@
+# Library code: level max + strict rules. Tests: see phpstan.tests.neon.
+includes:
+    - vendor/phpstan/phpstan-strict-rules/rules.neon
+
+parameters:
+    level: max
+    phpVersion: 80100
+    paths:
+        - src
+    tmpDir: .phpstan.cache
+    treatPhpDocTypesAsCertain: false
+    reportUnmatchedIgnoredErrors: true

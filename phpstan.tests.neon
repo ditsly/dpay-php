@@ -1,0 +1,13 @@
+# Test code: level 5 with the PHPUnit extension (fixture JSON is `mixed` by nature).
+includes:
+    - vendor/phpstan/phpstan-phpunit/extension.neon
+    - vendor/phpstan/phpstan-phpunit/rules.neon
+
+parameters:
+    level: 5
+    phpVersion: 80100
+    paths:
+        - tests
+        - examples
+    tmpDir: .phpstan.tests.cache
+    reportUnmatchedIgnoredErrors: true
