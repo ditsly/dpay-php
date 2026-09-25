@@ -32,6 +32,38 @@ final class PsrTransportTest extends TestCase
         self::assertTrue($transport->isHardened());
     }
 
+    /**
+     * Guzzle 7 and 8 are both supported. Guzzle 8 dropped getConfig() from
+     * GuzzleHttp\ClientInterface but kept it on the concrete Client, and it
+     * type-checks every request option at send time: the SDK-built client's
+     * settings must read back through getConfig() and pass that validation
+     * on a real send (the handler below replaces only the network).
+     */
+    #[Test]
+    public function theSdkBuiltGuzzleReadsBackAndSendsOnEverySupportedMajor(): void
+    {
+        self::assertContains(\GuzzleHttp\ClientInterface::MAJOR_VERSION, [7, 8], 'a new Guzzle major must be reviewed before it is supported');
+
+        $built = PsrTransport::hardenedGuzzle(12.5, 3.0);
+        self::assertInstanceOf(Guzzle::class, $built);
+        /** @var array<string, mixed> $config Guzzle 7 declares mixed, Guzzle 8 array<string, mixed> */
+        $config = $built->getConfig();
+        self::assertFalse($config['allow_redirects']);
+        self::assertTrue($config['verify']);
+        self::assertFalse($config['http_errors']);
+        self::assertSame(12.5, $config['timeout']);
+        self::assertSame(3.0, $config['connect_timeout']);
+
+        $mock = new MockHandler([new Response(307, ['Location' => 'https://elsewhere.example'], '')]);
+        $config['handler'] = HandlerStack::create($mock);
+        $factory = new HttpFactory();
+        $transport = new PsrTransport(new Guzzle($config), $factory, $factory);
+        self::assertTrue($transport->isHardened());
+        $response = $transport->send('POST', 'https://dpay.ly/api/v2/checkout-sessions', ['Content-Type' => 'application/json'], '{"amount":"1.00"}', 5.0);
+        self::assertSame(307, $response->status, 'a 307 is handed back, never re-sent');
+        self::assertCount(0, $mock);
+    }
+
     #[Test]
     public function refusesAnInjectedGuzzleThatFollowsRedirects(): void
     {

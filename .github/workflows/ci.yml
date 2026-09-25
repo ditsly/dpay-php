@@ -31,16 +31,26 @@ jobs:
       - run: vendor/bin/phpstan analyse --memory-limit=1G --no-progress -c phpstan.tests.neon
 
   tests:
-    name: phpunit (PHP ${{ matrix.php }}, ${{ matrix.deps }} deps)
+    name: phpunit (PHP ${{ matrix.php }}, ${{ matrix.deps }} deps, Guzzle ${{ matrix.guzzle }})
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
+        # Highest deps resolve Guzzle 8; the pinned cells keep Guzzle 7 proven, and the
+        # lowest cell installs the oldest Guzzle 7 the require-dev range allows.
         php: ['8.1', '8.2', '8.3', '8.4', '8.5']
         deps: [highest]
+        guzzle: ['8']
         include:
           - php: '8.1'
+            deps: highest
+            guzzle: '7'
+          - php: '8.5'
+            deps: highest
+            guzzle: '7'
+          - php: '8.1'
             deps: lowest
+            guzzle: '7'
     steps:
       - uses: actions/checkout@v4
       - uses: shivammathur/setup-php@v2
@@ -48,6 +58,8 @@ jobs:
           php-version: ${{ matrix.php }}
           extensions: json, mbstring
           coverage: none
+      - name: Pin the Guzzle major for this cell
+        run: composer require --dev --no-update --no-interaction "guzzlehttp/guzzle:${{ matrix.guzzle == '7' && '^7.9' || '^8.0' }}"
       - name: Install dependencies (highest)
         if: matrix.deps == 'highest'
         run: composer install --no-interaction --no-progress --prefer-dist

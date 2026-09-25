@@ -17,7 +17,7 @@
 composer require dpay/dpay-php guzzlehttp/guzzle
 ```
 
-الحزمة لا تفرض Guzzle؛ أي عميل PSR-18 يفي بالغرض. عند وجود Guzzle تبنيه الحزمة بنفسها بإعدادات آمنة (بدون تحويلات، مهلة 15 ثانية، التحقق من TLS)، وترفض عميل Guzzle مُمرَّراً يتبع التحويلات أو يعطّل التحقق من TLS. مع أي عميل PSR-18 آخر لا تستطيع الحزمة قراءة إعداداته — ابنه أنت بلا تحويلات ومع التحقق من TLS (في Symfony: `max_redirects => 0`).
+الحزمة لا تفرض Guzzle؛ أي عميل PSR-18 يفي بالغرض. عند وجود Guzzle (الإصدار 7 أو 8) تبنيه الحزمة بنفسها بإعدادات آمنة (بدون تحويلات، مهلة 15 ثانية، التحقق من TLS)، وترفض عميل Guzzle مُمرَّراً يتبع التحويلات أو يعطّل التحقق من TLS. مع أي عميل PSR-18 آخر لا تستطيع الحزمة قراءة إعداداته — ابنه أنت بلا تحويلات ومع التحقق من TLS (في Symfony: `max_redirects => 0`).
 
 ### البداية السريعة — صفحة الدفع المستضافة (موصى بها)
 
@@ -128,8 +128,8 @@ $session = $dpay->paymentSessions()->get($opened->sessionId);
 
 The official DPay SDK for PHP 8.1+: hosted checkout for every payment method (EDFali, Sadad, MobiCash, the MITF banks, Moamalat, Mastercard), the raw per-method API, signed-webhook verification and the sandbox — with money as decimal strings, an exception per API refusal, and Arabic-first customer messages.
 
-- Requires PHP >= 8.1, `ext-json`, a PSR-18 client + PSR-17 factories (Guzzle recommended; discovered automatically).
-- Tested on PHP 8.1, 8.2, 8.3, 8.4 and 8.5 (`tools/matrix.sh` runs the whole gate set in Docker).
+- Requires PHP >= 8.1, `ext-json`, a PSR-18 client + PSR-17 factories (Guzzle 7 or 8 recommended; discovered automatically).
+- Tested on PHP 8.1, 8.2, 8.3, 8.4 and 8.5 with Guzzle 8, and on PHP 8.1 and 8.5 with Guzzle 7 (`tools/matrix.sh` runs the whole gate set in Docker).
 - Zero floats in money: `Money` holds decimal strings; the platform's rounding (`PhpRound`) is ported so `round(2.675, 2)` is `2.68` on every PHP version, proven against the platform's golden vectors.
 
 ### Install
@@ -296,7 +296,7 @@ Client::live($token, [
 ```bash
 composer install
 composer check          # composer validate --strict · php-cs-fixer · phpstan (src: max, tests: 5) · phpunit (unit + contract)
-tools/matrix.sh         # the same gates on php:8.1-cli … php:8.5-cli in Docker
+tools/matrix.sh         # the same gates on php:8.1-cli … php:8.5-cli in Docker (Guzzle 8, plus Guzzle 7 cells)
 composer sync-fixtures  # refresh tests/Contract/fixtures from the platform's execution-generated Postman collection
 ```
 

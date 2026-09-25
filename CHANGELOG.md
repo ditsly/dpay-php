@@ -4,6 +4,19 @@ All notable changes to `dpay/dpay-php` are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/).
 
+## [1.0.1] — 2026-09-25
+
+### Fixed
+- `LICENSE` names the copyright holder correctly: **Dimensions IT Solutions (DITS)**, Libya —
+  https://dits.ly. 1.0.0 carried a wrong expansion of the acronym.
+
+### Changed
+- Tested on **Guzzle 8** as well as 7: the development constraint is `^7.9 || ^8.0`, and CI runs
+  the suite on Guzzle 8 on PHP 8.1–8.5 and on Guzzle 7 (highest and lowest dependencies). No
+  code change was needed — the SDK-built client stays hardened (TLS verification on, redirects
+  refused) and an injected Guzzle 8 client with redirects on or `verify => false` is refused as
+  on 7.
+
 ## [1.0.0] — 2026-09-25
 
 First public release.
@@ -54,4 +67,5 @@ First public release.
   skips TLS verification (`verify => false`); `clientClass()` / `isHardened()` expose what is in
   use. README shows the Symfony client with `max_redirects => 0`.
 
+[1.0.1]: https://github.com/ditsly/dpay-php/releases/tag/v1.0.1
 [1.0.0]: https://github.com/ditsly/dpay-php/releases/tag/v1.0.0

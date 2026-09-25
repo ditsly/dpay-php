@@ -5,12 +5,17 @@
 # and run unverified. The checkout is mounted READ-ONLY and copied into the
 # container without vendor/ or composer.lock, so every version resolves its own
 # dependency set and the host tree is never touched.
-#   tools/matrix.sh            # all five versions
-#   tools/matrix.sh 8.1 8.4    # a subset
+#
+# A cell is PHP[:GUZZLE]. Without a Guzzle major the cell resolves the highest
+# Guzzle the PHP version allows (8.x); with one it pins that major, so both
+# supported majors (7 and 8) run the whole gate set. Every cell checks that the
+# Guzzle major it expects is the one installed.
+#   tools/matrix.sh                # every PHP version on Guzzle 8, plus 8.1 and 8.5 on Guzzle 7
+#   tools/matrix.sh 8.1 8.4:7      # a subset
 set -uo pipefail
 cd "$(dirname "$0")/.."
 versions=("$@")
-[ ${#versions[@]} -eq 0 ] && versions=(8.1 8.2 8.3 8.4 8.5)
+[ ${#versions[@]} -eq 0 ] && versions=(8.1 8.2 8.3 8.4 8.5 8.1:7 8.5:7)
 status=0
 # The published repository ships its own copy in tools/; inside the monorepo it is
 # integrations/tools/composer-bin.sh.
@@ -22,8 +27,18 @@ else
   . "$PWD/../tools/composer-bin.sh"
 fi
 composer_bin="$(composer_bin_from_image)" || { echo "could not obtain the composer binary from the composer:2 image"; exit 2; }
-for v in "${versions[@]}"; do
-  echo "=== PHP $v ==="
+for cell in "${versions[@]}"; do
+  v="${cell%%:*}"
+  guzzle=""
+  [ "$cell" != "$v" ] && guzzle="${cell##*:}"
+  case "$guzzle" in
+    '') guzzle_constraint='' ; expect_guzzle=8 ;;
+    7) guzzle_constraint='^7.9' ; expect_guzzle=7 ;;
+    8) guzzle_constraint='^8.0' ; expect_guzzle=8 ;;
+    *) echo "unknown Guzzle major: $guzzle"; exit 2 ;;
+  esac
+  label="PHP $v × Guzzle $expect_guzzle"
+  echo "=== $label ==="
   # Inside the monorepo, also expose the platform's generated Postman collection and the
   # checkout app's message table so the fixtures-are-current and the messages-are-a-verbatim-port
   # checks run (both are skipped on a standalone checkout).
@@ -32,15 +47,18 @@ for v in "${versions[@]}"; do
   extra_mount=()
   [ -d "$platform_docs" ] && extra_mount+=(-v "$platform_docs:/platform/packages/contracts/docs:ro")
   [ -d "$checkout_lib" ] && extra_mount+=(-v "$checkout_lib:/platform/apps/checkout/lib:ro")
-  docker run --rm -v "$PWD:/src:ro" -v "$composer_bin:/usr/local/bin/composer:ro" "${extra_mount[@]}" -w /work "php:$v-cli" bash -ec '
+  docker run --rm -v "$PWD:/src:ro" -v "$composer_bin:/usr/local/bin/composer:ro" "${extra_mount[@]}" -e GUZZLE="$guzzle_constraint" -e EXPECT_GUZZLE="$expect_guzzle" -w /work "php:$v-cli" bash -ec '
     set -o pipefail
     mkdir -p /work && cd /src && tar --exclude=./vendor --exclude=./composer.lock --exclude=./.phpunit.cache --exclude=./.phpstan.cache --exclude=./.phpstan.tests.cache -cf - . | tar -xf - -C /work && cd /work
     php -v | head -1
     (apt-get update -qq && apt-get install -y -qq git unzip) >/dev/null 2>&1
     export COMPOSER_ROOT_VERSION=1.0.0
     composer --version 2>/dev/null | head -1
+    if [ -n "$GUZZLE" ]; then composer require --dev --no-update --no-interaction "guzzlehttp/guzzle:$GUZZLE" >/dev/null; fi
     composer install --no-interaction --no-progress --prefer-dist 2>&1 | grep -E "^(Installing|  - Installing phpunit/phpunit|  - Installing phpstan/phpstan|  - Installing friendsofphp)" || true
     for pkg in phpunit/phpunit phpstan/phpstan friendsofphp/php-cs-fixer guzzlehttp/guzzle; do printf "%s " "$pkg"; composer show "$pkg" 2>/dev/null | grep -E "^versions" | sed "s/versions *: *//"; done
+    installed_guzzle="$(php -r "require \"vendor/autoload.php\"; echo GuzzleHttp\\ClientInterface::MAJOR_VERSION;")"
+    if [ "$installed_guzzle" != "$EXPECT_GUZZLE" ]; then echo "expected Guzzle $EXPECT_GUZZLE, resolved Guzzle $installed_guzzle"; exit 1; fi
     composer validate --strict
     vendor/bin/phpunit --testsuite unit | tail -2
     vendor/bin/phpunit --testsuite contract | tail -2
@@ -49,7 +67,7 @@ for v in "${versions[@]}"; do
     vendor/bin/php-cs-fixer fix --dry-run --show-progress=none 2>&1 | tail -1
   '
   rc=$?
-  echo "=== PHP $v exit=$rc"
+  echo "=== $label exit=$rc"
   [ $rc -ne 0 ] && status=1
 done
 echo "=== matrix exit=$status"

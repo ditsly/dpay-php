@@ -57,7 +57,8 @@ final class PsrTransport implements TransportInterface
 
     /**
      * Refuse a Guzzle client that would follow redirects or skip TLS
-     * verification. Only Guzzle exposes its config (`getConfig()`, Guzzle 6/7);
+     * verification. Only Guzzle exposes its config (`getConfig()` on the concrete
+     * client — Guzzle 8 dropped it from ClientInterface but kept it on Client);
      * any other client passes through unread.
      *
      * @throws InvalidArgumentException

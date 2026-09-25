@@ -34,7 +34,7 @@
     },
     "require-dev": {
         "friendsofphp/php-cs-fixer": "^3.64",
-        "guzzlehttp/guzzle": "^7.9",
+        "guzzlehttp/guzzle": "^7.9 || ^8.0",
         "nyholm/psr7": "^1.8",
         "phpstan/phpstan": "^2.1",
         "phpstan/phpstan-phpunit": "^2.0",
@@ -42,7 +42,7 @@
         "phpunit/phpunit": "^10.5 || ^11.5"
     },
     "suggest": {
-        "guzzlehttp/guzzle": "A PSR-18 client; when installed the SDK builds it with TLS verification on, redirects off and the DPay timeouts.",
+        "guzzlehttp/guzzle": "A PSR-18 client (Guzzle 7 or 8); when installed the SDK builds it with TLS verification on, redirects off and the DPay timeouts.",
         "nyholm/psr7": "Lightweight PSR-17 factories when Guzzle is not used."
     },
     "autoload": {
