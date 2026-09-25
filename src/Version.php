@@ -6,7 +6,7 @@ namespace DPay;
 
 final class Version
 {
-    public const SDK = '1.0.0';
+    public const SDK = '1.0.2';
 
     public static function userAgent(): string
     {

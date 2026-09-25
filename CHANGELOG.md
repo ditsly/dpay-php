@@ -4,6 +4,13 @@ All notable changes to `dpay/dpay-php` are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/).
 
+## [1.0.2] — 2026-09-26
+
+### Fixed
+- `DPay\Version::SDK` (and so the `User-Agent`) reports the release it ships in. The published
+  1.0.1 (tag `v1.0.1`, `49427b0`) still says `1.0.0` — its `User-Agent` is `dpay-php/1.0.0`; from
+  this release `VersionTest` pins the constant to the newest CHANGELOG heading.
+
 ## [1.0.1] — 2026-09-25
 
 ### Fixed
@@ -67,5 +74,6 @@ First public release.
   skips TLS verification (`verify => false`); `clientClass()` / `isHardened()` expose what is in
   use. README shows the Symfony client with `max_redirects => 0`.
 
+[1.0.2]: https://github.com/ditsly/dpay-php/releases/tag/v1.0.2
 [1.0.1]: https://github.com/ditsly/dpay-php/releases/tag/v1.0.1
 [1.0.0]: https://github.com/ditsly/dpay-php/releases/tag/v1.0.0
